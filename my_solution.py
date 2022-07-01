@@ -17,30 +17,42 @@ class TicketIter:
         return callback(result)
 
     def transform_name(self, names):
-        return [('_').join(name.lower().split()) for name in names]
+        return (('_').join(name.lower().split()) for name in names)
 
     def transform_type(self, row):
         def transform_type_helper(item):
             try:
                 return int(item)
-            except Exception:
+            except ValueError:
                 try:
                     return datetime.strptime(item, '%m/%d/%Y').date()
-                except:
-                    return item
-        return [transform_type_helper(item) for item in row]
+                except ValueError:
+                    try:
+                        cleaned = item.strip()
+                        return cleaned if cleaned else 'N/A'
+                    except ValueError:
+                        return item
+        return (transform_type_helper(item) for item in row)
 
     def __iter__(self):
         return self
 
     def __next__(self):
         try:
-            return self.Ticket(*self.transform_row(next(self.file), self.transform_type))
+            ticket = self.Ticket(
+                *self.transform_row(next(self.file), self.transform_type))
+            if ticket.vehicle_make != 'N/A':
+                return ticket
+            else:
+                return(next(self))
         except StopIteration:
             self.file.close()
             raise StopIteration
+
+
 # ticket = TicketIter()
-# print(next(ticket))
+# for item in ticket:
+#     print(item.vehicle_make)
 
 
 # Generator solution //////////
@@ -54,26 +66,34 @@ def gen_ticket():
         return callback(result)
 
     def transform_name(names):
-        return [('_').join(name.lower().split()) for name in names]
+        return (('_').join(name.lower().split()) for name in names)
 
     def transform_type(data):
         def transform_type_helper(item):
             try:
                 return int(item)
-            except Exception:
+            except ValueError:
                 try:
                     return datetime.strptime(item, '%m/%d/%Y').date()
-                except Exception:
-                    return item
-        return [transform_type_helper(item) for item in data]
+                except ValueError:
+                    try:
+                        cleaned = item.strip()
+                        return cleaned if cleaned else 'N/A'
+                    except ValueError:
+                        return item
+        return (transform_type_helper(item) for item in data)
 
     with open('nyc_parking_tickets_extract.csv') as f:
         Ticket = namedtuple('Ticket', transform_row(next(f), transform_name))
         while True:
             try:
-                result = transform_row(next(f), transform_type)
-                yield Ticket(*result)
+                ticket = Ticket(*transform_row(next(f), transform_type))
+                if ticket.vehicle_make != 'N/A':
+                    yield ticket
             except StopIteration:
                 return None
+
+
 # ticket = gen_ticket()
-# print(next(ticket))
+# for item in ticket:
+#     print(item.vehicle_make)
