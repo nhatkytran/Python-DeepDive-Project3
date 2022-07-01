@@ -1,5 +1,5 @@
 from datetime import datetime
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 # Iterator solution
 
@@ -50,9 +50,7 @@ class TicketIter:
             raise StopIteration
 
 
-# ticket = TicketIter()
-# for item in ticket:
-#     print(item.vehicle_make)
+# tickets = TicketIter()
 
 
 # Generator solution //////////
@@ -94,6 +92,14 @@ def gen_ticket():
                 return None
 
 
-# ticket = gen_ticket()
-# for item in ticket:
-#     print(item.vehicle_make)
+tickets = gen_ticket()
+
+
+def validation_count():
+    cars = defaultdict(int)
+    for ticket in tickets:
+        cars[ticket.vehicle_make] += 1
+    return {car: value for car, value in sorted(cars.items(), key=lambda k: k[1], reverse=True)}
+
+
+# print(validation_count())
